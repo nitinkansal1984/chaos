@@ -61,7 +61,7 @@ rollbacks:
     func: remove_abort_fault
     module: chaosistio.fault.actions
     arguments:
-      virtual_service_name: go-demo-8
+      virtual_service_name: bookinfo
       routes:
         - destination:
             host: productpage
