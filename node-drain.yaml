@@ -17,7 +17,7 @@ steady-state-hypothesis:
     tolerance: true
     provider:
       type: python
-      func: all_microservices_healthy
+      func: all_pods_healthy
       module: chaosk8s.probes
       arguments:
         ns: webapp
