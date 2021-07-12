@@ -1,0 +1,36 @@
+version: 1.0.0
+title: What happens if we delete a node
+description: All the instances are distributed among healthy nodes and the applications are healthy
+tags:
+- k8s
+- deployment
+- node
+configuration:
+  node_label:
+      type: env
+      key: NODE_LABEL
+steady-state-hypothesis:
+  title: Nodes are indestructible
+  probes:
+  - name: all-apps-are-healthy
+    type: probe
+    tolerance: true
+    provider:
+      type: python
+      func: all_microservices_healthy
+      module: chaosk8s.probes
+      arguments:
+        ns: webapp
+method:
+- type: action
+  name: delete-node
+  provider:
+    type: python
+    func: delete_nodes
+    module: chaosk8s.node.actions
+    arguments:
+      label_selector: ${node_label}
+      count: 1
+      pod_namespace: webapp
+  pauses:
+    after: 10
