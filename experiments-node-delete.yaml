@@ -4,38 +4,6 @@ kind: ConfigMap
 metadata:
   name: chaostoolkit-experiments
 data:
-  health-instances.yaml: |
-    version: 1.0.0
-    title: What happens if we terminate an instance?
-    description: Everything should continue working as if nothing happened
-    tags:
-    - k8s
-    - pod
-    - deployment
-    steady-state-hypothesis:
-      title: The app is healthy
-      probes:
-      - name: all-apps-are-healthy
-        type: probe
-        tolerance: true
-        provider:
-          type: python
-          func: all_microservices_healthy
-          module: chaosk8s.probes
-          arguments:
-            ns: webapp
-    method:
-    - type: action
-      name: terminate-app-pod
-      provider:
-        type: python
-        module: chaosk8s.pod.actions
-        func: terminate_pods
-        arguments:
-          rand: true
-          ns: webapp
-      pauses:
-        after: 10
   node.yaml: |
     version: 1.0.0
     title: What happens if we delete a node
