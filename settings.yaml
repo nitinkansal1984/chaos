@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaostoolkit-settings
+data:
+  settings.yaml: |
+    notifications:
+    - type: plugin
+      module: chaosslack.notification
+      token: <tokenid>
+      channel: general
