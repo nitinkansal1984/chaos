@@ -1,0 +1,30 @@
+version: 1.0.0
+title: What happens if we terminate a Pod?
+description: If a Pod is terminated, a new one should be created in its places.
+tags:
+- k8s
+- pod
+steady-state-hypothesis:       ## with below SSH, we are ensuring number of pods running is 1 before action and after action. Basically validate the pod that it exist, terminate with action, then validate.
+  title: Pod exists                    
+  probes:
+  - name: pod-exists
+    type: probe                      ## Probe the pod state before and after the action
+    tolerance: 1                     ## Expect to have exactly one POD in specified namespace
+    provider:
+      type: python
+      func: count_pods               ## Count the number of pods
+      module: chaosk8s.pod.probes
+      arguments:
+        label_selector: run=nginx
+        ns: webapp
+method:
+- type: action
+  name: terminate-pod
+  provider:
+    type: python
+    module: chaosk8s.pod.actions
+    func: terminate_pods
+    arguments:
+      label_selector: run=nginx
+      rand: true
+      ns: webapp
