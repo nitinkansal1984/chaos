@@ -35,6 +35,8 @@ spec:
             env:
             - name: CHAOSTOOLKIT_IN_POD
               value: "true"
+            - name: NODE_LABEL
+              value: kubernetes.io/os=linux
             volumeMounts:
             - name: experiments
               mountPath: /experiment
