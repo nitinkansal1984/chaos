@@ -36,7 +36,7 @@ spec:
             - name: CHAOSTOOLKIT_IN_POD
               value: "true"
             - name: INGRESS_HOST
-              value: 20.75.157.19
+              value: 104.45.180.156
             volumeMounts:
             - name: experiments
               mountPath: /experiment
