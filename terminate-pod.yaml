@@ -1,0 +1,17 @@
+version: 1.0.0
+title: What happens if we terminate a Pod?
+description: If a Pod is terminated, a new one should be created in its places.
+tags:
+- k8s
+- pod
+method:
+- type: action
+  name: terminate-pod
+  provider:
+    type: python                                                  ## type of provider
+    module: chaosk8s.pod.actions                 ## matching the module installed in last step. You can see this in discovery.json
+    func: terminate_pods                                  ## The function is terminate_pods
+    arguments:
+      label_selector: run=nginx                         ## labels of the pod which we want to terminate                    
+      rand: true                                                     ## kill the pods randomly
+      ns: webapp                                                  ## namespace where pod lies  
