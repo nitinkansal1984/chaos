@@ -1,0 +1,220 @@
+# Source: https://gist.github.com/fed8b1bf3c79aff2f752cfd2c2c73d70
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaostoolkit-experiments
+data:
+  health-http.yaml: |
+    version: 1.0.0
+    title: What happens if we terminate an instance of the application?
+    description: If an instance of the application is terminated, the applications as a whole should still be operational.
+    tags:
+    - k8s
+    - pod
+    configuration:          ## add this configuration, chaostoolkit variable name is ingress_host and type is env. If we define environment variable named INGRESS_HOST, the value will be assigned to ingress_host
+      ingress_host:
+          type: env
+          key: INGRESS_HOST
+    steady-state-hypothesis:
+      title: The app is healthy
+      probes:
+      - name: app-responds-to-requests
+        type: probe
+        tolerance: 200
+        provider:
+          type: http
+          timeout: 3
+          verify_tls: false
+          url: http://${ingress_host}/productpage
+          headers:
+            Host: bookinfo.com
+    method:
+    - type: action
+      name: terminate-app-pod
+      provider:
+        type: python
+        module: chaosk8s.pod.actions
+        func: terminate_pods
+        arguments:
+          label_selector: version=v1
+          rand: true
+          ns: webapp
+      pauses:
+        after: 20
+  health-instances.yaml: |
+    version: 1.0.0
+    title: What happens if we terminate an instance of the application?
+    description: If an instance of the application is terminated, a new instance should be created
+    tags:
+    - k8s
+    - pod
+    - deployment
+    steady-state-hypothesis:
+      title: The app is healthy
+      probes:
+      - name: all-apps-are-healthy
+        type: probe
+        tolerance: true
+        provider:
+          type: python
+          func: all_microservices_healthy
+          module: chaosk8s.probes
+          arguments:
+            ns: webapp
+    method:
+    - type: action
+      name: terminate-app-pod
+      provider:
+        type: python
+        module: chaosk8s.pod.actions
+        func: terminate_pods
+        arguments:
+          label_selector: version=v1
+          rand: true
+          ns: webapp
+      pauses:
+        after: 10
+  network-delay.yaml: |
+    version: 1.0.0
+    title: What happens if we delay
+    description: If responses are delayed, the dependant application should timeout and retry requests
+    tags:
+    - k8s
+    - istio
+    - http
+    configuration:          ## add this configuration, chaostoolkit variable name is ingress_host and type is env. If we define environment variable named INGRESS_HOST, the value will be assigned to ingress_host
+      ingress_host:
+          type: env
+          key: INGRESS_HOST
+    steady-state-hypothesis:
+      title: The app is healthy
+      probes:
+      - type: probe
+        name: app-responds-to-requests
+        tolerance: 200
+        provider:
+          type: http
+          timeout: 20
+          verify_tls: false
+          url: http://${ingress_host}/productpage
+          headers:
+            Host: bookinfo.com
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+    method:
+    - type: action
+      name: delay
+      provider:
+        type: python
+        module: chaosistio.fault.actions
+        func: add_delay_fault
+        arguments:
+          virtual_service_name: bookinfo
+          fixed_delay: 15s
+          routes:
+            - destination:
+                host: productpage
+                subset: v1
+          percentage: 50
+          version: networking.istio.io/v1alpha3
+          ns: webapp
+      pauses:
+        after: 1
+    rollbacks:
+    - type: action
+      name: remove-delay
+      provider:
+        type: python
+        func: remove_delay_fault
+        module: chaosistio.fault.actions
+        arguments:
+          virtual_service_name: bookinfo
+          routes:
+            - destination:
+                host: productpage
+                subset: v1
+          version: networking.istio.io/v1alpha3
+          ns: webapp
+  network-abort.yaml: |
+    version: 1.0.0
+    title: What happens if we abort responses
+    description: If responses are aborted and delayed, the dependant application should retry and/or timeout requests
+    tags:
+    - k8s
+    - istio
+    - http
+    configuration:          ## add this configuration, chaostoolkit variable name is ingress_host and type is env. If we define environment variable named INGRESS_HOST, the value will be assigned to ingress_host
+      ingress_host:
+          type: env
+          key: INGRESS_HOST
+    steady-state-hypothesis:
+      title: The app is healthy
+      probes:
+      - type: probe
+        name: app-responds-to-requests
+        tolerance: 200
+        provider:
+          type: http
+          timeout: 20
+          verify_tls: false
+          url: http://${ingress_host}/productpage
+          headers:
+            Host: bookinfo.com
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+      - type: probe
+        tolerance: 200
+        ref: app-responds-to-requests
+    method:
+    - type: action
+      name: abort-failure
+      provider:
+        type: python
+        module: chaosistio.fault.actions
+        func: add_abort_fault
+        arguments:
+          virtual_service_name: bookinfo
+          http_status: 500
+          routes:
+            - destination:
+                host: productpage
+                subset: v1
+          percentage: 50
+          version: networking.istio.io/v1alpha3
+          ns: webapp
+      pauses:
+        after: 1
+    rollbacks:
+    - type: action
+      name: remove-abort-failure
+      provider:
+        type: python
+        func: remove_abort_fault
+        module: chaosistio.fault.actions
+        arguments:
+          virtual_service_name: bookinfo
+          routes:
+            - destination:
+                host: productpage
+                subset: v1
+          version: networking.istio.io/v1alpha3
+          ns: webapp
