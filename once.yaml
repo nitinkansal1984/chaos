@@ -1,0 +1,45 @@
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chaos-once
+spec:
+  activeDeadlineSeconds: 600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: chaos-once
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: chaostoolkit
+      restartPolicy: Never
+      containers:
+      - name: chaostoolkit
+        image: nitinkansal/chaostoolkit:1.4.1-2
+        args:
+        - --verbose
+        - run
+        - /experiment/health-http.yaml
+        env:
+        - name: CHAOSTOOLKIT_IN_POD
+          value: "true"
+        - name: INGRESS_HOST
+          value: 20.75.157.19
+        volumeMounts:
+        - name: config
+          mountPath: /experiment
+          readOnly: true
+        resources:
+          limits:
+            cpu: 20m
+            memory: 64Mi
+          requests:
+            cpu: 20m
+            memory: 64Mi
+      volumes:
+      - name: config
+        configMap:
+          name: chaostoolkit-experiments
