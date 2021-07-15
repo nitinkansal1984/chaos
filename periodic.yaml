@@ -1,0 +1,74 @@
+---
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: chaos-periodic
+spec:
+  concurrencyPolicy: Forbid
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    metadata:
+      labels:
+        app: chaos-periodic
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: chaos-periodic
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccountName: chaostoolkit
+          restartPolicy: Never
+          containers:
+          - name: chaostoolkit
+            image: nitinkansal/chaostoolkit:1.4.1-2
+            args:
+            - --verbose
+            - run
+            - --journal-path
+            - /results/journal-health-http.json
+            - /experiment/health-http.yaml
+            env:
+            - name: CHAOSTOOLKIT_IN_POD
+              value: "true"
+            - name: INGRESS_HOST
+              value: 20.75.157.19
+            volumeMounts:
+            - name: experiments
+              mountPath: /experiment
+              readOnly: true
+            - name: results
+              mountPath: /results
+              readOnly: false
+            resources:
+              limits:
+                cpu: 20m
+                memory: 64Mi
+              requests:
+                cpu: 20m
+                memory: 64Mi
+          volumes:
+          - name: experiments
+            configMap:
+              name: chaostoolkit-experiments
+          - name: results
+            persistentVolumeClaim:
+              claimName: chaos-periodic
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: chaos-periodic
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: azurefile
