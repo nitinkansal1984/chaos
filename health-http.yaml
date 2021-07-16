@@ -21,7 +21,7 @@ steady-state-hypothesis:
       verify_tls: false   ## no SSL
       url: http://${ingress_host}   ## application URL 
       headers:
-        Host: example.com
+        Host: wordpress.com
 method:
 - type: action
   name: terminate-app-pod
