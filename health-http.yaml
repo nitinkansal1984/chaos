@@ -1,0 +1,37 @@
+version: 1.0.0
+title: What happens if we terminate an instance of the application?
+description: If an instance of the application is terminated, the applications as a whole should still be operational.
+tags:
+- k8s
+- pod
+- http
+configuration:          ## add this configuration, chaostoolkit variable name is ingress_host and type is env. If we define environment variable named INGRESS_HOST, the value will be assigned to ingress_host
+  ingress_host:
+      type: env
+      key: INGRESS_HOST
+steady-state-hypothesis:
+  title: The app is healthy
+  probes:
+  - name: app-responds-to-requests
+    type: probe
+    tolerance: 200  ## application response 200 return code 
+    provider:
+      type: http     ## there is no function this time, we are just using http
+      timeout: 3    ## we expect our application response in 3 seconds
+      verify_tls: false   ## no SSL
+      url: http://${ingress_host}   ## application URL 
+      headers:
+        Host: example.com
+method:
+- type: action
+  name: terminate-app-pod
+  provider:
+    type: python
+    module: chaosk8s.pod.actions
+    func: terminate_pods
+    arguments:
+      label_selector: app.kubernetes.io/name=wordpress
+      rand: true
+      ns: webapp
+  pauses:
+    after: 2
