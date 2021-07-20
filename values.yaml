@@ -515,7 +515,7 @@ ingress:
   ingressClassName:
   ## @param ingress.hostname Default host for the ingress record
   ##
-  hostname: wordpress.com
+  hostname: wordpress.local
   ## @param ingress.path Default path for the ingress record
   ## NOTE: You may need to set this to '/*' in order to use this with ALB ingress controllers
   ##
@@ -678,7 +678,7 @@ pdb:
 ##
 autoscaling:
   enabled: true
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 11
   targetCPU: 50
   targetMemory: 50
