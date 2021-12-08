@@ -34,4 +34,4 @@ method:
       pod_namespace: webapp
       delete_pods_with_local_storage: true
   pauses:
-    after: 1
+    after: 15
