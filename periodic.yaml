@@ -30,7 +30,7 @@ spec:
             - --verbose
             - run
             - --journal-path
-            - /results/journal-health-http.json
+            - /results/report.json
             - /experiment/health-http.yaml
             env:
             - name: CHAOSTOOLKIT_IN_POD
